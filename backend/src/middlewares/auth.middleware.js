@@ -53,3 +53,21 @@ export const authorizeRoles = (...roles) => {
     next();
   };
 };
+
+/**
+ * Authorize Senior Doctors and Admins only.
+ * Senior doctors are regular doctors with the isSeniorDoctor flag.
+ * Must be used AFTER protectRoute.
+ */
+export const authorizeSeniorOrAdmin = (req, res, next) => {
+  const isAdmin = req.user?.role === "admin";
+  const isSDoc = req.user?.role === "doctor" && req.user?.isSeniorDoctor === true;
+
+  if (!isAdmin && !isSDoc) {
+    return res.status(403).json({
+      success: false,
+      message: "Forbidden: Only senior doctors and admins can access this resource",
+    });
+  }
+  next();
+};

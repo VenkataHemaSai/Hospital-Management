@@ -2,14 +2,16 @@ import { User, Patient, Doctor } from "../models/index.js";
 import { generateTokenAndSetCookie } from "../utils/generateToken.js";
 
 /**
- * Register a new user (polymorphic creation based on role)
+ * Register a new PATIENT (public self-registration).
+ * Doctors register via approved application tokens.
+ * Admins are seeded directly.
  */
 export const register = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, role, ...otherData } = req.body;
+    const { firstName, lastName, email, password, ...otherData } = req.body;
 
-    if (!firstName || !lastName || !email || !password || !role) {
-      return res.status(400).json({ success: false, message: "Missing required core fields" });
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({ success: false, message: "Missing required fields" });
     }
 
     const existingUser = await User.findOne({ email });
@@ -17,30 +19,13 @@ export const register = async (req, res) => {
       return res.status(400).json({ success: false, message: "Email is already registered" });
     }
 
-    let newUser;
-    const baseData = { firstName, lastName, email, password, role };
-
-    // Create the specific document based on role using Mongoose Discriminators
-    if (role === "patient") {
-      if (!otherData.dateOfBirth || !otherData.gender) {
-        return res.status(400).json({ success: false, message: "Patients require dateOfBirth and gender" });
-      }
-      newUser = new Patient({ ...baseData, ...otherData });
-    } else if (role === "doctor") {
-      if (!otherData.specialty || otherData.experienceYears === undefined || !otherData.consultationFee) {
-        return res.status(400).json({ success: false, message: "Doctors require specialty, experienceYears, and consultationFee" });
-      }
-      newUser = new Doctor({ ...baseData, ...otherData });
-    } else if (role === "admin") {
-      // Admins are just base users for now
-      newUser = new User({ ...baseData, ...otherData });
-    } else {
-      return res.status(400).json({ success: false, message: "Invalid role specified" });
+    if (!otherData.dateOfBirth || !otherData.gender) {
+      return res.status(400).json({ success: false, message: "Date of birth and gender are required" });
     }
 
+    const newUser = new Patient({ firstName, lastName, email, password, role: "patient", ...otherData });
     await newUser.save();
 
-    // Generate JWT cookie
     generateTokenAndSetCookie(newUser._id, res);
 
     res.status(201).json({
@@ -65,7 +50,6 @@ export const login = async (req, res) => {
       return res.status(400).json({ success: false, message: "Please provide email and password" });
     }
 
-    // Must explicitly select the password field since it is select: false in the schema
     const user = await User.findOne({ email }).select("+password");
 
     if (!user) {
@@ -82,7 +66,7 @@ export const login = async (req, res) => {
     }
 
     user.lastLogin = new Date();
-    await user.save({ validateBeforeSave: false }); // Don't trigger full validation just for lastLogin
+    await user.save({ validateBeforeSave: false });
 
     generateTokenAndSetCookie(user._id, res);
 
@@ -111,13 +95,13 @@ export const logout = (req, res) => {
 };
 
 /**
- * Get current logged in user (used for initial app load)
+ * Get current logged in user
  */
 export const getMe = async (req, res) => {
   try {
     res.status(200).json({
       success: true,
-      user: req.user.toSafeObject(), // req.user is attached by the protectRoute middleware
+      user: req.user.toSafeObject(),
     });
   } catch (error) {
     console.error("Error in getMe controller: ", error.message);

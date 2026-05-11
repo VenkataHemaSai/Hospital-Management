@@ -142,3 +142,30 @@ export const getPatientById = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+
+/**
+ * PUT /api/users/doctors/:id/promote
+ * Admin only: Toggle a doctor's Senior Doctor status.
+ */
+export const promoteDoctorToSenior = async (req, res) => {
+  try {
+    const doctor = await Doctor.findById(req.params.id);
+    if (!doctor || doctor.role !== "doctor") {
+      return res.status(404).json({ success: false, message: "Doctor not found" });
+    }
+
+    doctor.isSeniorDoctor = !doctor.isSeniorDoctor;
+    await doctor.save({ validateBeforeSave: false });
+
+    res.status(200).json({
+      success: true,
+      message: doctor.isSeniorDoctor
+        ? `Dr. ${doctor.firstName} ${doctor.lastName} is now a Senior Doctor`
+        : `Dr. ${doctor.firstName} ${doctor.lastName} is no longer a Senior Doctor`,
+      data: { isSeniorDoctor: doctor.isSeniorDoctor },
+    });
+  } catch (error) {
+    console.error("Error in promoteDoctorToSenior: ", error.message);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};

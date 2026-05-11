@@ -7,6 +7,7 @@ import {
   updateMyProfile,
   getPatients,
   getPatientById,
+  promoteDoctorToSenior,
 } from "../controllers/user.controller.js";
 
 const router = express.Router();
@@ -22,5 +23,8 @@ router.put("/profile", protectRoute, updateMyProfile);
 // Protected — doctor and admin only
 router.get("/patients", protectRoute, authorizeRoles("doctor", "admin"), getPatients);
 router.get("/patients/:id", protectRoute, authorizeRoles("doctor", "admin"), getPatientById);
+
+// Admin only — promote/demote doctor to Senior Doctor
+router.put("/doctors/:id/promote", protectRoute, authorizeRoles("admin"), promoteDoctorToSenior);
 
 export default router;
