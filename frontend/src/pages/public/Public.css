@@ -83,3 +83,41 @@
   .step-connector { width: 2px; height: 40px; }
   .contact-grid { grid-template-columns: 1fr; }
 }
+
+/* ─── File Upload Box ─────────────────────────────────────────── */
+.upload-box {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: var(--transition);
+  background: var(--bg-secondary);
+  text-align: center;
+}
+.upload-box:hover {
+  border-color: var(--accent-primary);
+  background: var(--accent-primary-light);
+}
+
+.file-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.file-chip span:first-of-type {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

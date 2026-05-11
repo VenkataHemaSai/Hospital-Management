@@ -1,12 +1,40 @@
 import crypto from "crypto";
 import { DoctorApplication, Doctor, User } from "../models/index.js";
 import { generateTokenAndSetCookie } from "../utils/generateToken.js";
+import { cloudinary } from "../config/cloudinary.js";
 
+// Helper: upload a single file buffer to Cloudinary
+const uploadToCloudinary = async (file, folder, resourceType = "auto") => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder, resource_type: resourceType, quality: "auto", fetch_format: "auto" },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve({ url: result.secure_url, publicId: result.public_id });
+      }
+    );
+    stream.end(file.buffer);
+  });
+};
+
+/**
+ * POST /api/applications
+ * Public — submit a doctor registration application with optional file uploads.
+ * Files handled by multer (multipart/form-data):
+ *   - certificates[] (multiple)
+ *   - licenseDoc
+ *   - idProof
+ *   - profilePhoto
+ */
 export const submitApplication = async (req, res) => {
   try {
-    const { firstName, lastName, email, phone, specialty, experienceYears,
-            licenseNumber, qualifications, hospital, consultationFee, bio } = req.body;
+    const {
+      firstName, lastName, email, phone, dateOfBirth, gender, address,
+      specialty, subSpecialty, experienceYears, licenseNumber, licenseExpiry,
+      qualifications, hospital, consultationFee, bio, languages,
+    } = req.body;
 
+    // --- Validation ---
     if (!firstName || !lastName || !email || !specialty || !experienceYears || !licenseNumber || !qualifications || !consultationFee) {
       return res.status(400).json({ success: false, message: "Missing required fields" });
     }
@@ -26,9 +54,52 @@ export const submitApplication = async (req, res) => {
       });
     }
 
+    // --- Handle File Uploads ---
+    const files = req.files || {};
+
+    let certificates = [];
+    if (files.certificates) {
+      for (const cert of files.certificates) {
+        const uploaded = await uploadToCloudinary(cert, "medicare/applications/certificates", "auto");
+        certificates.push({ name: cert.originalname, url: uploaded.url, publicId: uploaded.publicId });
+      }
+    }
+
+    let licenseDoc = { url: "", publicId: "" };
+    if (files.licenseDoc?.[0]) {
+      licenseDoc = await uploadToCloudinary(files.licenseDoc[0], "medicare/applications/licenses", "auto");
+    }
+
+    let idProof = { url: "", publicId: "" };
+    if (files.idProof?.[0]) {
+      idProof = await uploadToCloudinary(files.idProof[0], "medicare/applications/id-proofs", "auto");
+    }
+
+    let profilePhoto = { url: "", publicId: "" };
+    if (files.profilePhoto?.[0]) {
+      profilePhoto = await uploadToCloudinary(files.profilePhoto[0], "medicare/applications/photos", "image");
+    }
+
+    // --- Create Application ---
     const application = await DoctorApplication.create({
-      firstName, lastName, email, phone, specialty, experienceYears,
-      licenseNumber, qualifications, hospital, consultationFee, bio,
+      firstName, lastName, email, phone,
+      dateOfBirth: dateOfBirth || undefined,
+      gender: gender || "prefer_not_to_say",
+      address,
+      specialty,
+      subSpecialty,
+      experienceYears: Number(experienceYears),
+      licenseNumber,
+      licenseExpiry: licenseExpiry || undefined,
+      qualifications,
+      hospital,
+      consultationFee: Number(consultationFee),
+      bio,
+      languages: languages ? (Array.isArray(languages) ? languages : languages.split(",").map(l => l.trim())) : [],
+      certificates,
+      licenseDoc,
+      idProof,
+      profilePhoto,
     });
 
     res.status(201).json({
@@ -42,6 +113,10 @@ export const submitApplication = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/applications
+ * Protected — SDoc/Admin only. Get all applications with optional status filter.
+ */
 export const getApplications = async (req, res) => {
   try {
     const { status } = req.query;
@@ -56,6 +131,10 @@ export const getApplications = async (req, res) => {
   }
 };
 
+/**
+ * PUT /api/applications/:id/approve
+ * Protected — SDoc/Admin only. Approve and generate a one-time registration link.
+ */
 export const approveApplication = async (req, res) => {
   try {
     const application = await DoctorApplication.findById(req.params.id);
@@ -82,6 +161,10 @@ export const approveApplication = async (req, res) => {
   }
 };
 
+/**
+ * PUT /api/applications/:id/reject
+ * Protected — SDoc/Admin only.
+ */
 export const rejectApplication = async (req, res) => {
   try {
     const application = await DoctorApplication.findById(req.params.id);
@@ -100,6 +183,10 @@ export const rejectApplication = async (req, res) => {
   }
 };
 
+/**
+ * POST /api/applications/register
+ * Public — Doctor sets password using their one-time approval token.
+ */
 export const registerWithToken = async (req, res) => {
   try {
     const { token, password } = req.body;
@@ -123,16 +210,21 @@ export const registerWithToken = async (req, res) => {
       firstName: application.firstName,
       lastName: application.lastName,
       email: application.email,
-      password,
+      password,                           // plain — pre-save hook hashes it
       phone: application.phone,
       role: "doctor",
       specialty: application.specialty,
+      subSpecialty: application.subSpecialty,
       experienceYears: application.experienceYears,
       licenseNumber: application.licenseNumber,
       hospital: application.hospital,
       consultationFee: { amount: application.consultationFee, currency: "INR" },
       bio: application.bio,
+      languages: application.languages,
       isVerified: true,
+      profilePicture: application.profilePhoto?.url
+        ? { url: application.profilePhoto.url, publicId: application.profilePhoto.publicId }
+        : undefined,
     });
 
     await doctor.save();

@@ -2,6 +2,9 @@
  * Database Seed Script
  * Creates the initial Admin and first Senior Doctor.
  * Run ONCE during initial setup: npm run seed
+ *
+ * HOW TO RE-SEED: If accounts already exist and you want to reset them,
+ * manually delete them from MongoDB Atlas first, then run: npm run seed
  */
 import "dotenv/config";
 import mongoose from "mongoose";
@@ -19,12 +22,13 @@ const seedUsers = async () => {
   const existingAdmin = await User.findOne({ email: adminEmail });
 
   if (existingAdmin) {
-    console.log("⚠️  Admin already exists, skipping...");
+    console.log("⏩  Admin already exists, skipping...");
   } else {
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash("Admin@123", salt);
 
-    // Admin is not a discriminator, so insert directly into the users collection
+    // Admin is not a discriminator (no Patient/Doctor sub-schema),
+    // so we insert raw to avoid discriminator mismatch.
     const db = mongoose.connection.db;
     await db.collection("users").insertOne({
       firstName: "System",
@@ -43,20 +47,19 @@ const seedUsers = async () => {
   }
 
   // --- 2. Seed First Senior Doctor ---
+  // IMPORTANT: We use `new Doctor().save()` with the raw password string
+  // so the pre-save hook hashes it ONCE. Do NOT pre-hash the password here.
   const sdocEmail = "senior.doctor@medicare.com";
   const existingSDoc = await User.findOne({ email: sdocEmail });
 
   if (existingSDoc) {
-    console.log("⚠️  Senior Doctor already exists, skipping...");
+    console.log("⏩  Senior Doctor already exists, skipping...");
   } else {
-    const salt = await bcrypt.genSalt(12);
-    const hashedPassword = await bcrypt.hash("SeniorDoc@123", salt);
-
-    await Doctor.create({
+    const sdoc = new Doctor({
       firstName: "Rajesh",
       lastName: "Kumar",
       email: sdocEmail,
-      password: hashedPassword,
+      password: "SeniorDoc@123",   // plain text — pre-save hook hashes it
       role: "doctor",
       phone: "+91 9876500001",
       isActive: true,
@@ -70,12 +73,15 @@ const seedUsers = async () => {
       isVerified: true,
       isSeniorDoctor: true,
     });
+
+    await sdoc.save();
+
     console.log("✅ Senior Doctor created:");
     console.log("   Email: senior.doctor@medicare.com");
     console.log("   Password: SeniorDoc@123");
   }
 
-  console.log("\n🎉 Seed complete!");
+  console.log("\n🌱 Seed complete!");
   await mongoose.disconnect();
   process.exit(0);
 };
