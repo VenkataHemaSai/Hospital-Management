@@ -171,6 +171,7 @@ img { max-width: 100%; }
 .badge-cyan { background: #cffafe; color: #0e7490; }
 .badge-violet { background: #ede9fe; color: #6d28d9; }
 .badge-coral { background: #fff7ed; color: #c2410c; }
+.badge-purple { background: #ede9fe; color: #6d28d9; }
 
 /* ─── Page Header ──────────────────────────────────────────────────────────── */
 .page-header {
