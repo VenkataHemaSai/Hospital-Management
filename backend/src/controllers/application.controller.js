@@ -1,21 +1,7 @@
 import crypto from "crypto";
 import { DoctorApplication, Doctor, User } from "../models/index.js";
 import { generateTokenAndSetCookie } from "../utils/generateToken.js";
-import { cloudinary } from "../config/cloudinary.js";
-
-// Helper: upload a single file buffer to Cloudinary
-const uploadToCloudinary = async (file, folder, resourceType = "auto") => {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { folder, resource_type: resourceType, quality: "auto", fetch_format: "auto" },
-      (error, result) => {
-        if (error) return reject(error);
-        resolve({ url: result.secure_url, publicId: result.public_id });
-      }
-    );
-    stream.end(file.buffer);
-  });
-};
+import { uploadToCloudinary } from "../config/cloudinary.js";
 
 /**
  * POST /api/applications
@@ -60,24 +46,27 @@ export const submitApplication = async (req, res) => {
     let certificates = [];
     if (files.certificates) {
       for (const cert of files.certificates) {
-        const uploaded = await uploadToCloudinary(cert, "medicare/applications/certificates", "auto");
-        certificates.push({ name: cert.originalname, url: uploaded.url, publicId: uploaded.publicId });
+        const uploaded = await uploadToCloudinary(cert.buffer, "medicare/applications/certificates", "auto");
+        certificates.push({ name: cert.originalname, url: uploaded.fileUrl, publicId: uploaded.publicId });
       }
     }
 
     let licenseDoc = { url: "", publicId: "" };
     if (files.licenseDoc?.[0]) {
-      licenseDoc = await uploadToCloudinary(files.licenseDoc[0], "medicare/applications/licenses", "auto");
+      const r = await uploadToCloudinary(files.licenseDoc[0].buffer, "medicare/applications/licenses", "auto");
+      licenseDoc = { url: r.fileUrl, publicId: r.publicId };
     }
 
     let idProof = { url: "", publicId: "" };
     if (files.idProof?.[0]) {
-      idProof = await uploadToCloudinary(files.idProof[0], "medicare/applications/id-proofs", "auto");
+      const r = await uploadToCloudinary(files.idProof[0].buffer, "medicare/applications/id-proofs", "auto");
+      idProof = { url: r.fileUrl, publicId: r.publicId };
     }
 
     let profilePhoto = { url: "", publicId: "" };
     if (files.profilePhoto?.[0]) {
-      profilePhoto = await uploadToCloudinary(files.profilePhoto[0], "medicare/applications/photos", "image");
+      const r = await uploadToCloudinary(files.profilePhoto[0].buffer, "medicare/applications/photos", "image");
+      profilePhoto = { url: r.fileUrl, publicId: r.publicId };
     }
 
     // --- Create Application ---
