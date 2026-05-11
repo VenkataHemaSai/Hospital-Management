@@ -14,6 +14,7 @@ export const userAPI = {
   updateMyProfile: (data) => api.put("/users/profile", data),
   getPatients: (params) => api.get("/users/patients", { params }),
   getPatientById: (id) => api.get(`/users/patients/${id}`),
+  promoteDoctorToSenior: (id) => api.put(`/users/doctors/${id}/promote`),
 };
 
 export const appointmentAPI = {
@@ -52,4 +53,12 @@ export const chatAPI = {
     api.get(`/chat/conversations/${conversationId}/messages`, { params }),
   sendMessage: (conversationId, data) =>
     api.post(`/chat/conversations/${conversationId}/messages`, data),
+};
+
+export const applicationAPI = {
+  submit: (data) => api.post("/applications", data),
+  getAll: (params) => api.get("/applications", { params }),
+  approve: (id, data) => api.put(`/applications/${id}/approve`, data),
+  reject: (id, data) => api.put(`/applications/${id}/reject`, data),
+  registerWithToken: (data) => api.post("/applications/register", data),
 };
