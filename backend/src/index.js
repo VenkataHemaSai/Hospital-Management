@@ -11,6 +11,7 @@ import appointmentRouter from "./routes/appointment.routes.js";
 import prescriptionRouter from "./routes/prescription.routes.js";
 import medicalRecordRouter from "./routes/medicalRecord.routes.js";
 import chatRouter from "./routes/chat.routes.js";
+import applicationRouter from "./routes/application.routes.js";
 import { initSocket } from "./config/socket.js";
 
 const app = express();
@@ -48,6 +49,7 @@ app.use("/api/appointments", appointmentRouter);
 app.use("/api/prescriptions", prescriptionRouter);
 app.use("/api/records", medicalRecordRouter);
 app.use("/api/chat", chatRouter);
+app.use("/api/applications", applicationRouter);
 
 // --- 404 Handler ---
 app.use((req, res) => {
