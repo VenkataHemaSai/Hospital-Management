@@ -17,6 +17,9 @@ const statusBadge = {
 /* ── Reason Modal ─────────────────────────────────────────────── */
 function ReasonModal({ title, description, confirmLabel, confirmClass = "btn-danger", onConfirm, onClose }) {
   const [reason, setReason] = useState("");
+  const wordCount = reason.trim() === "" ? 0 : reason.trim().split(/\s+/).length;
+  const isReasonValid = wordCount >= 20;
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card card" onClick={(e) => e.stopPropagation()}>
@@ -30,11 +33,16 @@ function ReasonModal({ title, description, confirmLabel, confirmClass = "btn-dan
           </div>
         </div>
         <div className="form-group">
-          <label className="label">Reason <span style={{ color: "var(--accent-danger)" }}>*</span></label>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem", alignItems: "center" }}>
+            <label className="label" style={{ marginBottom: 0 }}>Reason <span style={{ color: "var(--accent-danger)" }}>*</span></label>
+            <span style={{ fontSize: "0.75rem", color: isReasonValid ? "#059669" : "var(--accent-danger)", fontWeight: 500 }}>
+              {wordCount} / 20 words min
+            </span>
+          </div>
           <textarea
             className="input"
-            rows={3}
-            placeholder="Provide a clear reason..."
+            rows={4}
+            placeholder="Provide a detailed reason (minimum 20 words required)..."
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             style={{ resize: "vertical" }}
@@ -43,7 +51,7 @@ function ReasonModal({ title, description, confirmLabel, confirmClass = "btn-dan
         </div>
         <div className="flex gap-2" style={{ justifyContent: "flex-end" }}>
           <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button className={`btn ${confirmClass}`} disabled={!reason.trim()} onClick={() => reason.trim() && onConfirm(reason)}>
+          <button className={`btn ${confirmClass}`} disabled={!isReasonValid} onClick={() => isReasonValid && onConfirm(reason)}>
             {confirmLabel}
           </button>
         </div>

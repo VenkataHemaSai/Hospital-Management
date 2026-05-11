@@ -18,7 +18,7 @@ export const getDoctors = async (req, res) => {
 
     const [doctors, total] = await Promise.all([
       Doctor.find(query)
-        .select("firstName lastName specialty consultationFee experienceYears rating profilePicture availability hospital bio acceptingNewPatients")
+        .select("firstName lastName specialty consultationFee experienceYears rating profilePicture availability hospital bio acceptingNewPatients isSeniorDoctor createdAt")
         .skip(skip)
         .limit(parseInt(limit))
         .sort({ "rating.count": -1 }),
