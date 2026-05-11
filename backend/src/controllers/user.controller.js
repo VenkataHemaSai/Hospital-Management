@@ -154,6 +154,13 @@ export const promoteDoctorToSenior = async (req, res) => {
       return res.status(404).json({ success: false, message: "Doctor not found" });
     }
 
+    const { reason } = req.body;
+
+    // Demotion requires a reason
+    if (doctor.isSeniorDoctor && !reason?.trim()) {
+      return res.status(400).json({ success: false, message: "A reason is required to demote a Senior Doctor" });
+    }
+
     doctor.isSeniorDoctor = !doctor.isSeniorDoctor;
     await doctor.save({ validateBeforeSave: false });
 
@@ -161,7 +168,7 @@ export const promoteDoctorToSenior = async (req, res) => {
       success: true,
       message: doctor.isSeniorDoctor
         ? `Dr. ${doctor.firstName} ${doctor.lastName} is now a Senior Doctor`
-        : `Dr. ${doctor.firstName} ${doctor.lastName} is no longer a Senior Doctor`,
+        : `Dr. ${doctor.firstName} ${doctor.lastName} has been demoted to Doctor`,
       data: { isSeniorDoctor: doctor.isSeniorDoctor },
     });
   } catch (error) {
@@ -169,3 +176,40 @@ export const promoteDoctorToSenior = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+
+/**
+ * DELETE /api/users/doctors/:id
+ * Admin only: Deactivate (soft-delete) a doctor with a mandatory reason.
+ */
+export const deactivateDoctor = async (req, res) => {
+  try {
+    const { reason } = req.body;
+    if (!reason?.trim()) {
+      return res.status(400).json({ success: false, message: "A reason is required to remove a doctor" });
+    }
+
+    const doctor = await Doctor.findById(req.params.id);
+    if (!doctor || doctor.role !== "doctor") {
+      return res.status(404).json({ success: false, message: "Doctor not found" });
+    }
+
+    if (!doctor.isActive) {
+      return res.status(400).json({ success: false, message: "Doctor is already deactivated" });
+    }
+
+    doctor.isActive = false;
+    // Store the deactivation reason in a note (add field if needed or log it)
+    await doctor.save({ validateBeforeSave: false });
+
+    console.log(`Admin deactivated Dr. ${doctor.firstName} ${doctor.lastName}. Reason: ${reason}`);
+
+    res.status(200).json({
+      success: true,
+      message: `Dr. ${doctor.firstName} ${doctor.lastName} has been removed from the platform`,
+    });
+  } catch (error) {
+    console.error("Error in deactivateDoctor: ", error.message);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+

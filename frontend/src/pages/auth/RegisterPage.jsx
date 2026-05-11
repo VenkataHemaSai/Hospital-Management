@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore.js";
 import toast from "react-hot-toast";
-import { Stethoscope, Stethoscope as DoctorIcon } from "lucide-react";
+import { Stethoscope, Eye, EyeOff } from "lucide-react";
 import "./Auth.css";
 
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
     firstName: "", lastName: "", email: "", password: "",
     phone: "", dateOfBirth: "", gender: "male",
@@ -32,7 +33,6 @@ export default function RegisterPage() {
 
   return (
     <div className="auth-page">
-      {/* Navbar with back-to-home link */}
       <div className="auth-navbar">
         <Link to="/" className="auth-navbar-brand">
           <div className="auth-navbar-logo"><Stethoscope size={20} /></div>
@@ -69,15 +69,28 @@ export default function RegisterPage() {
             <input type="email" className="input" placeholder="you@example.com" value={form.email} onChange={(e) => set("email", e.target.value)} required />
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label className="label">Password</label>
-              <input type="password" className="input" placeholder="Min 8 characters" value={form.password} onChange={(e) => set("password", e.target.value)} required minLength={8} />
+          {/* Password with eye toggle */}
+          <div className="form-group">
+            <label className="label">Password</label>
+            <div className="input-icon-wrapper">
+              <input
+                type={showPassword ? "text" : "password"}
+                className="input input-with-action"
+                placeholder="Min 8 characters"
+                value={form.password}
+                onChange={(e) => set("password", e.target.value)}
+                required
+                minLength={8}
+              />
+              <button type="button" className="input-action" onClick={() => setShowPassword((p) => !p)} tabIndex={-1}>
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
-            <div className="form-group">
-              <label className="label">Phone (optional)</label>
-              <input className="input" placeholder="+91 9876543210" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
-            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="label">Phone (optional)</label>
+            <input className="input" placeholder="+91 9876543210" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
           </div>
 
           <div className="form-row">
@@ -101,7 +114,6 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        {/* Doctor CTA */}
         <div className="doctor-cta-box">
           <span>Are you a doctor?</span>
           <Link to="/apply-doctor" className="auth-link">Apply to join as a Doctor →</Link>

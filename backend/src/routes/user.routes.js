@@ -8,6 +8,7 @@ import {
   getPatients,
   getPatientById,
   promoteDoctorToSenior,
+  deactivateDoctor,
 } from "../controllers/user.controller.js";
 
 const router = express.Router();
@@ -24,7 +25,8 @@ router.put("/profile", protectRoute, updateMyProfile);
 router.get("/patients", protectRoute, authorizeRoles("doctor", "admin"), getPatients);
 router.get("/patients/:id", protectRoute, authorizeRoles("doctor", "admin"), getPatientById);
 
-// Admin only — promote/demote doctor to Senior Doctor
-router.put("/doctors/:id/promote", protectRoute, authorizeRoles("admin"), promoteDoctorToSenior);
+// Admin only
+router.put("/doctors/:id/promote",     protectRoute, authorizeRoles("admin"), promoteDoctorToSenior);
+router.delete("/doctors/:id",           protectRoute, authorizeRoles("admin"), deactivateDoctor);
 
 export default router;

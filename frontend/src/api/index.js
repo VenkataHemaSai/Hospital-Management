@@ -14,7 +14,8 @@ export const userAPI = {
   updateMyProfile: (data) => api.put("/users/profile", data),
   getPatients: (params) => api.get("/users/patients", { params }),
   getPatientById: (id) => api.get(`/users/patients/${id}`),
-  promoteDoctorToSenior: (id) => api.put(`/users/doctors/${id}/promote`),
+  promoteDoctorToSenior: (id, data) => api.put(`/users/doctors/${id}/promote`, data),
+  deactivateDoctor: (id, data) => api.delete(`/users/doctors/${id}`, { data }),
 };
 
 export const appointmentAPI = {
