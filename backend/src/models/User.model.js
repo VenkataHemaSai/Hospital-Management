@@ -224,6 +224,7 @@ const DoctorSchema = new Schema({
     count: { type: Number, default: 0 },
   },
   acceptingNewPatients: { type: Boolean, default: true },
+  isSeniorDoctor: { type: Boolean, default: false },
 });
 
 DoctorSchema.virtual("averageRating").get(function () {

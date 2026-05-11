@@ -3,11 +3,11 @@ import { useAuthStore } from "../../store/authStore.js";
 import toast from "react-hot-toast";
 import {
   LayoutDashboard, Calendar, FileText, FolderOpen,
-  MessageSquare, Users, User, LogOut, Stethoscope
+  MessageSquare, Users, User, LogOut, Stethoscope, ClipboardList
 } from "lucide-react";
 import "./MainLayout.css";
 
-const navItems = {
+const baseNavItems = {
   patient: [
     { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { to: "/doctors", icon: Stethoscope, label: "Find Doctors" },
@@ -27,8 +27,11 @@ const navItems = {
     { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { to: "/doctors", icon: Stethoscope, label: "Doctors" },
     { to: "/appointments", icon: Calendar, label: "Appointments" },
+    { to: "/applications", icon: ClipboardList, label: "Applications" },
   ],
 };
+
+const APPLICATIONS_ITEM = { to: "/applications", icon: ClipboardList, label: "Applications" };
 
 export default function MainLayout() {
   const { user, logout } = useAuthStore();
@@ -37,19 +40,34 @@ export default function MainLayout() {
   const handleLogout = async () => {
     await logout();
     toast.success("Logged out successfully");
-    navigate("/login");
+    navigate("/");
   };
 
-  const items = navItems[user?.role] || [];
+  // Build nav items based on role + senior doctor status
+  let items = baseNavItems[user?.role] || [];
+  if (user?.role === "doctor" && user?.isSeniorDoctor) {
+    items = [...items, APPLICATIONS_ITEM];
+  }
+
+  // Friendly role label
+  const displayRole =
+    user?.role === "doctor" && user?.isSeniorDoctor
+      ? "Senior Doctor"
+      : user?.role === "doctor"
+      ? "Doctor"
+      : user?.role === "admin"
+      ? "Admin"
+      : "Patient";
+
   const initials = `${user?.firstName?.[0] || ""}${user?.lastName?.[0] || ""}`.toUpperCase();
 
   return (
     <div className="layout">
       <aside className="sidebar">
-        <div className="sidebar-logo">
+        <NavLink to="/" className="sidebar-logo" title="Back to Home">
           <div className="logo-icon"><Stethoscope size={22} /></div>
           <span className="logo-text">MediCare</span>
-        </div>
+        </NavLink>
 
         <nav className="sidebar-nav">
           {items.map(({ to, icon: Icon, label }) => (
@@ -69,7 +87,7 @@ export default function MainLayout() {
             <div className="avatar">{initials}</div>
             <div className="sidebar-user-info">
               <p className="sidebar-user-name">{user?.firstName} {user?.lastName}</p>
-              <p className="sidebar-user-role">{user?.role}</p>
+              <p className="sidebar-user-role">{displayRole}</p>
             </div>
           </NavLink>
           <button className="logout-btn" onClick={handleLogout} title="Logout">

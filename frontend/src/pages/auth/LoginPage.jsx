@@ -28,6 +28,14 @@ export default function LoginPage() {
 
   return (
     <div className="auth-page">
+      {/* Navbar with back-to-home link */}
+      <div className="auth-navbar">
+        <Link to="/" className="auth-navbar-brand">
+          <div className="auth-navbar-logo"><Stethoscope size={20} /></div>
+          <span className="auth-navbar-name">MediCare</span>
+        </Link>
+      </div>
+
       <div className="auth-bg">
         <div className="auth-bg-orb orb-1" />
         <div className="auth-bg-orb orb-2" />
